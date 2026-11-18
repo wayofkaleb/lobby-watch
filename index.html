@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A hands-on cybersecurity lab for spotting failed sign-in bursts in game-server logs.">
+  <meta name="theme-color" content="#11121a">
+  <title>Lobby Watch | Authentication Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="detection.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to dashboard</a>
+
+  <header class="site-header">
+    <div class="page-width header-inner">
+      <a class="brand" href="#main" aria-label="Lobby Watch overview">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>LOBBY<span class="brand-accent">WATCH</span></span>
+      </a>
+      <nav class="site-nav" aria-label="Dashboard">
+        <a href="#overview">Overview</a>
+        <a href="#events">Event log</a>
+        <a href="#lab-notes">Lab notes</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-width dashboard" id="main">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-content">
+        <p class="eyebrow">PACKET ARCADE / AUTHENTICATION LAB</p>
+        <h1 id="page-title">Lobby Watch<span aria-hidden="true">.</span></h1>
+        <p>Replay sign-ins and spot bursts of failed logins.</p>
+      </div>
+      <div class="hero-signal" aria-hidden="true">
+        <div class="signal-grid"></div>
+        <div class="signal-sample"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+    </section>
+
+    <section class="controls card" aria-label="Dataset and rule settings">
+      <div class="dataset-control">
+        <div class="dataset-heading">
+          <span class="control-label">Dataset</span>
+          <span id="demo-label" class="dataset-badge">NO DATA LOADED</span>
+        </div>
+        <div class="dataset-body">
+          <span class="dataset-name" id="dataset-name">&mdash;</span>
+          <div class="dataset-actions">
+            <button id="load-demo" class="button button--primary" type="button">Load demo</button>
+            <label class="button button--secondary upload-button" for="file-input">
+              Open JSONL
+              <input id="file-input" type="file" accept=".jsonl,.ndjson,.txt,application/x-ndjson,text/plain" aria-describedby="analysis-status">
+            </label>
+            <button id="download-demo" class="button button--text" type="button">Download sample</button>
+          </div>
+        </div>
+      </div>
+      <div class="rule-controls">
+        <label class="field" for="interval-minutes">
+          <span class="control-label">Window</span>
+          <select id="interval-minutes">
+            <option value="1">1 minute</option>
+            <option value="5" selected>5 minutes</option>
+            <option value="10">10 minutes</option>
+            <option value="15">15 minutes</option>
+          </select>
+        </label>
+        <label class="field" for="start-threshold">
+          <span class="control-label">Failures per source</span>
+          <input id="start-threshold" type="number" min="1" max="1000" step="1" value="5" required>
+        </label>
+      </div>
+      <div class="control-status">
+        <p id="analysis-status" role="status">Load a demo or open a JSONL file to begin.</p>
+        <p class="privacy-note"><span aria-hidden="true"></span> Files stay in this browser</p>
+      </div>
+    </section>
+
+    <section class="overview" id="overview" aria-label="Analysis overview">
+      <dl class="metrics">
+        <div class="metric card">
+          <dt>Sign-in events</dt>
+          <dd id="metric-events">&mdash;</dd>
+        </div>
+        <div class="metric card">
+          <dt>Failed sign-ins</dt>
+          <dd id="metric-failures">&mdash;</dd>
+        </div>
+        <div class="metric card">
+          <dt>Unique sources</dt>
+          <dd id="metric-sources">&mdash;</dd>
+        </div>
+        <div class="metric metric--alert card">
+          <dt>Rule matches</dt>
+          <dd id="metric-alerts">&mdash;</dd>
+        </div>
+      </dl>
+
+      <div class="analysis-grid">
+        <section class="card chart-panel" aria-labelledby="timeline-title">
+          <div class="panel-heading">
+            <h2 id="timeline-title">Failure timeline</h2>
+            <ul class="chart-legend" aria-label="Chart legend">
+              <li><span class="legend-swatch" aria-hidden="true"></span>Failures</li>
+              <li><span class="legend-swatch legend-swatch--alert" aria-hidden="true"></span>Flagged window</li>
+            </ul>
+          </div>
+          <div class="chart-scroll">
+            <div id="timeline-chart" class="timeline-chart" role="list" aria-label="Failed logins by time window">
+              <p class="empty-state" role="listitem">No timeline yet.</p>
+            </div>
+          </div>
+          <p class="panel-note" id="timeline-caption">Times are shown in UTC.</p>
+        </section>
+
+        <section class="card alerts-panel" aria-labelledby="alerts-title">
+          <div class="panel-heading">
+            <h2 id="alerts-title">Burst alerts</h2>
+          </div>
+          <p class="panel-note alerts-note">A shared source can belong to several players. Treat a flag as a lead to review.</p>
+          <ul id="alert-list" class="alert-list">
+            <li class="empty-state">No alerts to review yet.</li>
+          </ul>
+        </section>
+      </div>
+    </section>
+
+    <section class="card events-panel" id="events" aria-labelledby="event-title">
+      <div class="panel-heading events-heading">
+        <div>
+          <h2 id="event-title">Event log</h2>
+          <p class="panel-note" id="event-count">No events loaded.</p>
+        </div>
+        <label class="field event-filter" for="event-filter">
+          <span class="control-label">Filter events</span>
+          <select id="event-filter">
+            <option value="all">All events</option>
+            <option value="failure">Failed sign-ins</option>
+            <option value="success">Successful sign-ins</option>
+            <option value="flagged">Flagged failures</option>
+          </select>
+        </label>
+      </div>
+      <div class="table-scroll" role="region" aria-label="Event log table" tabindex="0">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Time (UTC)</th>
+              <th scope="col">Account</th>
+              <th scope="col">Source</th>
+              <th scope="col">Outcome</th>
+              <th scope="col">Context</th>
+            </tr>
+          </thead>
+          <tbody id="event-rows">
+            <tr><td colspan="5" class="empty-state">Load a dataset to see its events.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" aria-label="Event log pagination">
+        <button id="table-prev" class="button button--secondary" type="button" disabled>Previous</button>
+        <span id="page-label" class="panel-note" aria-live="polite">1 / 1</span>
+        <button id="table-next" class="button button--secondary" type="button" disabled>Next</button>
+      </div>
+    </section>
+
+    <section class="card notes-panel" id="lab-notes" aria-labelledby="notes-title">
+      <div class="panel-heading">
+        <h2 id="notes-title">Lab notes</h2>
+      </div>
+      <p>In the demo, at 21:30 UTC, five failed sign-ins are spread across several sources. The default rule leaves that window clear because it checks each source separately.</p>
+      <p>Fixed windows can miss a burst that straddles a boundary. Try changing the window length and compare which events get flagged.</p>
+    </section>
+
+    <noscript><p class="card noscript">Enable JavaScript to run log analysis in this browser.</p></noscript>
+  </main>
+</body>
+</html>
