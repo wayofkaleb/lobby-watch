@@ -4,8 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A hands-on cybersecurity lab for spotting failed sign-in bursts in game-server logs.">
-  <meta name="theme-color" content="#11121a">
-  <title>Lobby Watch | Authentication Lab</title>
+  <meta name="theme-color" content="#09090b">
+  <title>Lobby Watch | Midnight Packet</title>
+  <link rel="icon" href="midnight-envelope.png" type="image/png">
+  <link rel="preload" href="silkscreen-bold.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <script src="detection.js" defer></script>
   <script src="app.js" defer></script>
@@ -15,9 +17,9 @@
 
   <header class="site-header">
     <div class="page-width header-inner">
-      <a class="brand" href="#main" aria-label="Lobby Watch overview">
-        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span>LOBBY<span class="brand-accent">WATCH</span></span>
+      <a class="brand" href="https://packet-arcade.solehyssop8.chatgpt.site/" aria-label="Midnight Packet home">
+        <img class="brand-mark" src="midnight-envelope.png" width="36" height="36" alt="">
+        <span>midnight.packet</span>
       </a>
       <nav class="site-nav" aria-label="Dashboard">
         <a href="#overview">Overview</a>
@@ -30,12 +32,12 @@
   <main class="page-width dashboard" id="main">
     <section class="hero" aria-labelledby="page-title">
       <div class="hero-content">
-        <p class="eyebrow">PACKET ARCADE / AUTHENTICATION LAB</p>
-        <h1 id="page-title">Lobby Watch<span aria-hidden="true">.</span></h1>
+        <p class="eyebrow">Authentication lab</p>
+        <h1 id="page-title">Lobby <span>Watch</span></h1>
         <p>Replay sign-ins and spot bursts of failed logins.</p>
       </div>
       <div class="hero-signal" aria-hidden="true">
-        <div class="signal-grid"></div>
+        <div class="signal-lights"></div>
         <div class="signal-sample"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       </div>
     </section>
