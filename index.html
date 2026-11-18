@@ -171,8 +171,8 @@
       <div class="panel-heading">
         <h2 id="notes-title">Lab notes</h2>
       </div>
-      <p>In the demo, at 21:30 UTC, five failed sign-ins are spread across several sources. The default rule leaves that window clear because it checks each source separately.</p>
-      <p>Fixed windows can miss a burst that straddles a boundary. Try changing the window length and compare which events get flagged.</p>
+      <p>Start at 21:30 UTC. There are five failed sign-ins in that window, spread across several sources. The default rule counts failures per source, so that window stays clear.</p>
+      <p>A burst can spill into the next window and slip past the rule. Try changing the window length and see which events get flagged.</p>
     </section>
 
     <noscript><p class="card noscript">Enable JavaScript to run log analysis in this browser.</p></noscript>
