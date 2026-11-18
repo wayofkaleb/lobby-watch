@@ -5,7 +5,13 @@
   const timelineLimit = 24;
 
   function parseEvent(line) {
-    const entry = JSON.parse(line);
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch (error) {
+      if (error instanceof SyntaxError) return null;
+      throw error;
+    }
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null;
 
     const { timestamp, account, source, outcome } = entry;
@@ -35,50 +41,46 @@
       const line = rawLine.trim();
       if (!line) continue;
 
-      let event;
-      try {
-        event = parseEvent(line);
-      } catch (error) {
-        if (!(error instanceof SyntaxError)) throw error;
+      const event = parseEvent(line);
+      if (event === null) {
+        skipped += 1;
+        continue;
       }
-      if (event) events.push(event);
-      else skipped += 1;
+      events.push(event);
     }
 
     return { events, skipped };
   }
 
   function analyze(events, { threshold, intervalMinutes }) {
-    const interval = intervalMinutes * 60_000;
-    const windowStart = (time) => Math.floor(time / interval) * interval;
+    const windowMs = intervalMinutes * 60_000;
+    const windowStart = (time) => Math.floor(time / windowMs) * windowMs;
+    const newestFirst = [...events].sort((a, b) => b.time - a.time);
     const sources = new Set();
     const failuresByWindow = new Map();
     let failureCount = 0;
-    let newestStart = -Infinity;
-    let oldestStart = Infinity;
 
-    for (const event of events) {
-      const start = windowStart(event.time);
-      newestStart = Math.max(newestStart, start);
-      oldestStart = Math.min(oldestStart, start);
-      sources.add(event.source);
-      if (event.outcome !== 'failure') continue;
+    for (const { time, source, outcome } of events) {
+      sources.add(source);
+      if (outcome !== 'failure') continue;
 
       failureCount += 1;
-      if (!failuresByWindow.has(start)) {
-        failuresByWindow.set(start, { total: 0, bySource: new Map(), flagged: false });
+      const start = windowStart(time);
+      let bucket = failuresByWindow.get(start);
+      if (!bucket) {
+        bucket = { total: 0, bySource: new Map(), flagged: false };
+        failuresByWindow.set(start, bucket);
       }
-      const window = failuresByWindow.get(start);
-      window.total += 1;
-      window.bySource.set(event.source, (window.bySource.get(event.source) || 0) + 1);
+      bucket.total += 1;
+      bucket.bySource.set(source, (bucket.bySource.get(source) ?? 0) + 1);
     }
 
     const alerts = [];
-    for (const [start, window] of failuresByWindow) {
-      for (const [source, failures] of window.bySource) {
+    for (const [start, bucket] of failuresByWindow) {
+      for (const [source, failures] of bucket.bySource) {
         if (failures < threshold) continue;
         alerts.push({ start, source, failures });
-        window.flagged = true;
+        bucket.flagged = true;
       }
     }
     alerts.sort((first, second) =>
@@ -86,17 +88,21 @@
     );
 
     const buckets = [];
-    const firstStart = Math.max(oldestStart, newestStart - (timelineLimit - 1) * interval);
-    for (let start = firstStart; start <= newestStart; start += interval) {
-      const window = failuresByWindow.get(start);
-      buckets.push({ start, failures: window?.total || 0, flagged: window?.flagged || false });
+    if (newestFirst.length) {
+      const newest = windowStart(newestFirst[0].time);
+      const oldest = windowStart(newestFirst[newestFirst.length - 1].time);
+      const firstShown = Math.max(oldest, newest - (timelineLimit - 1) * windowMs);
+      for (let start = firstShown; start <= newest; start += windowMs) {
+        const bucket = failuresByWindow.get(start);
+        buckets.push({ start, failures: bucket?.total ?? 0, flagged: bucket?.flagged ?? false });
+      }
     }
 
-    const annotatedEvents = events.map((event) => {
-      const failures = failuresByWindow.get(windowStart(event.time))?.bySource.get(event.source) || 0;
+    const annotatedEvents = newestFirst.map((event) => {
+      const bucket = failuresByWindow.get(windowStart(event.time));
+      const failures = bucket?.bySource.get(event.source) ?? 0;
       return { ...event, flagged: event.outcome === 'failure' && failures >= threshold };
     });
-    annotatedEvents.sort((first, second) => second.time - first.time);
     return {
       events: annotatedEvents,
       alerts,

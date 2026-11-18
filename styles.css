@@ -264,7 +264,7 @@ select {
   font-size: 0.83rem;
 }
 
-.control-status [data-state="error"], .control-status .status--error { color: var(--amber); }
+.control-status .status--error { color: var(--amber); }
 .privacy-note { display: inline-flex; align-items: center; gap: 0.4rem; }
 .privacy-note span { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--green); }
 
@@ -350,8 +350,6 @@ select {
 .chart-column:last-child .chart-tick { align-self: end; }
 .alerts-note { margin: 0.3rem 0 0.75rem; }
 .alert-list { display: grid; gap: 0.45rem; max-height: 15.5rem; overflow: auto; list-style: none; padding: 0; }
-
-.status-error { color: var(--amber, #ffce73); }
 
 .notes-panel { padding: clamp(1rem, 3vw, 1.5rem); }
 .notes-panel p { max-width: 66ch; color: var(--muted); }
